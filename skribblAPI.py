@@ -10,6 +10,7 @@ class SkribblAPI:
         beepFreq=1000
         beepDur=300
 
+        # ----------- Configure the colour palette -----------
         print("Configure colour palette:")
         print("Mouse over the middle of white and wait",beepPause,"seconds for the beep...")
 
@@ -49,19 +50,54 @@ class SkribblAPI:
             "dpink ":   (9*delta_X+topleft_X, bottomright_Y),
             "dbrown":   (bottomright_X, bottomright_Y)
         }
-    
+
+        # ----------- Configure the canvas -----------
+        print("Configure the colour palette:")
+        print("Mouse over the top-left cornver of the canvas and wait",beepPause,"seconds for the beep...")
+
+        time.sleep(beepPause)
+        topleft_X, topleft_Y = pg.position()
+        ws.Beep(beepFreq,beepDur)
+        
+        print("Mouse over the bottom-right of the canvas and wait",beepPause,"seconds for the beep...")
+        
+        time.sleep(beepPause)
+        bottomright_X, bottomright_Y = pg.position()
+        ws.Beep(beepFreq,beepDur)
+
+        self.canvas={
+            "topleft":        (topleft_X,topleft_Y),
+            "bottomright":    (bottomright_X,bottomright_Y)
+        }
+
     def selectColour(self, colour="black"):
         destination = self.coordinates[colour]
         pg.moveTo(destination[0],destination[1])
         pg.click()
-       
 
+    def drawLine(self, coor1, coor2, colour):
+        self.selectColour(colour)
+        pg.moveTo(coor1)
+        pg.dragTo(coor2)
+    
+    def moveTo(self, coor):
+        pg.moveTo(coor[0],coor[1],0.1)
+
+    def dragTo(self, coor):
+        pg.dragTo(coor[0],coor[1])
 
 api=SkribblAPI()
 api.selectColour("blue")
-for colour in api.coordinates.keys():
-    api.selectColour(colour)
-    time.sleep(2)
+#pg.displayMousePosition()
+# 628 328
+api.drawLine((638,328),(700,328),"pink")
+api.drawLine((700,328),(700,428),"blue")
+api.drawLine((700,428),(638,428),"red")
+api.drawLine((638,428),(638,328),"green")
+
+# for colour in api.coordinates.keys():
+#     api.selectColour(colour)
+#     time.sleep(2)
 # 584 845 white
 #     870 black
 # 825     brown
