@@ -79,6 +79,13 @@ class SkribblAPI:
         self.selectColour(colour)
         pg.moveTo(coor1)
         pg.dragTo(coor2)
+
+    def drawShape(self, vertices, colour):
+        l = len(vertices)
+        if l == 0:
+            return
+        for v in vertices:
+            self.drawLine(v[0],v[1],'black')
     
     def moveTo(self, coor):
         pg.moveTo(coor[0],coor[1],0.1)
