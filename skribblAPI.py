@@ -1,6 +1,11 @@
 import pyautogui as pg
 import time
 import winsound as ws 
+from formatter import Formatter 
+import numpy as np 
+from cv2 import cv2 as cv
+from matplotlib import pyplot as plt
+import time
 
 class SkribblAPI:
 
@@ -52,17 +57,17 @@ class SkribblAPI:
         }
 
         # ----------- Configure the canvas -----------
-        print("Configure the colour palette:")
+        print("Configure the canvas:")
         print("Mouse over the top-left cornver of the canvas and wait",beepPause,"seconds for the beep...")
 
         time.sleep(beepPause)
-        topleft_X, topleft_Y = pg.position()
+        self.topleft_X, self.topleft_Y = pg.position()
         ws.Beep(beepFreq,beepDur)
         
         print("Mouse over the bottom-right of the canvas and wait",beepPause,"seconds for the beep...")
         
         time.sleep(beepPause)
-        bottomright_X, bottomright_Y = pg.position()
+        self.bottomright_X, self.bottomright_Y = pg.position()
         ws.Beep(beepFreq,beepDur)
 
         self.canvas={
@@ -75,17 +80,26 @@ class SkribblAPI:
         pg.moveTo(destination[0],destination[1])
         pg.click()
 
-    def drawLine(self, coor1, coor2, colour):
+    def drawCLine(self, coor1, coor2, colour):
+        # Assuming that the coordinate (0,0) is the top left of the canvas
         self.selectColour(colour)
-        pg.moveTo(coor1)
-        pg.dragTo(coor2)
+        # TODO: check for the coordinates being within the canvas
+        pg.moveTo(((coor1[0]+self.topleft_X),(coor1[1]+self.topleft_Y)))
+        pg.dragTo(((coor2[0]+self.topleft_X),(coor2[1]+self.topleft_Y)))
+
+    def drawLine(self, coor1, coor2):
+        # Assuming that the coordinate (0,0) is the top left of the canvas
+        # TODO: check for the coordinates being within the canvas
+        pg.moveTo(((coor1[0]+self.topleft_X),(coor1[1]+self.topleft_Y)))
+        pg.dragTo(((coor2[0]+self.topleft_X),(coor2[1]+self.topleft_Y)))
 
     def drawShape(self, vertices, colour):
         l = len(vertices)
+        self.selectColour(colour)
         if l == 0:
             return
         for v in vertices:
-            self.drawLine(v[0],v[1],'black')
+            self.drawLine(v[0],v[1])
     
     def moveTo(self, coor):
         pg.moveTo(coor[0],coor[1],0.1)
@@ -93,14 +107,25 @@ class SkribblAPI:
     def dragTo(self, coor):
         pg.dragTo(coor[0],coor[1])
 
+###############################################################################
+#   Testing 
+###############################################################################
+
 api=SkribblAPI()
 api.selectColour("blue")
 #pg.displayMousePosition()
 # 628 328
-api.drawLine((638,328),(700,328),"pink")
-api.drawLine((700,328),(700,428),"blue")
-api.drawLine((700,428),(638,428),"red")
-api.drawLine((638,428),(638,328),"green")
+# v = {((0,0),(200,200)),((200,200),(100,200)),((100,200),(0,0))}
+# api.drawShape(v,"blue")
+circ = Formatter("resources/circle1.jpg")
+circ.calcSobel()
+lst = circ.generateVerticies()
+time.sleep(5)
+api.drawShape(lst,"black")
+# api.drawLine((638,328),(700,328),"pink")
+# api.drawLine((700,328),(700,428),"blue")
+# api.drawLine((700,428),(638,428),"red")
+# api.drawLine((638,428),(638,328),"green")
 
 # for colour in api.coordinates.keys():
 #     api.selectColour(colour)

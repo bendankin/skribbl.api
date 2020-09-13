@@ -82,7 +82,9 @@ class Formatter:
         self.sobelz = sobelz_float.astype(int)
 
         # catch exceptions with dividing by zero
-        self.sobel_angles = np.arctan(self.sobely/self.sobelx)
+        #   - maybe add 1 to sobel x
+        # self.sobel_angles = np.arctan(self.sobely/self.sobelx)
+        self.sobel_angles = np.arctan(sobely_x64f/sobelx_x64f)
 
     def findStart(self):
         max_elem_indices = np.where(self.sobelz == np.amax(self.sobelz))
@@ -96,47 +98,116 @@ class Formatter:
 
     # - return coordinates
     # - threshholding may remove the need for min and max
-    def checkMove(self,mat,angle,coord,length,min):
+    def checkMove(self,coord,length,min):
+        perim = {()}
         # might add checkCoord here
-        new_coord = (coord[0] + int(length*np.sin(angle)), coord[1] + int(length*np.cos(angle)))
-        # if not self.inMat(new_coord,mat.shape):
-        #     if length > 1:
-        #         return self.checkMove(mat,angle,coord,length-1,min)
-        #     else:
-        #         # implement something to check whether or not it should add or subtract
-        #         return self.checkMove(mat,angle+0.196,coord,length,min)
-        new_val = mat[new_coord[0]][new_coord[1]]
-        # make sure it doesn't go back in the same direction
+        if not self.inMat(coord,self.sobel_angles.shape):
+            raise Exception
+        else:
+            #angle = self.sobel_angles[coord[0]][coord[1]] + np.pi/2
+            newCoord = self.findPerimMaxCoord(coord)
+            # if new coord isnt within threshold, return previous coord
+            if (self.sobelz[newCoord[0]][newCoord[1]] < min):
+                return coord
+            else:
+                return newCoord   
+    
+    def findPerimMaxCoord(self,coord):
+        maxPerimCoord = coord
+        maxVal = 0
+        for i in range(-1,2):
+            for j in range(-1,2):
+                if (i != 0 or j != 0):
+                    val = self.sobelz[coord[0]+i][coord[1]+j]
+                    if maxVal <= val:
+                        maxVal = val
+                        maxPerimCoord = (coord[0]+i,coord[1]+j)
 
-        # if new_val < min:
-        #     self.checkMove(mat,angle+0.196,coord,length,min)
+        return maxPerimCoord
 
-        return new_coord
+    def checkAngle(self,direction):
+        #   Diagram of pixels
+        #   3 2 1
+        #   4 # 0
+        #   5 6 7
+        if (5.891 < direction) and (direction <= .393):
+            return 0
+        elif (0.393 < direction) and (direction <= 1.178):
+            return 1
+        elif (1.178 < direction) and (direction <= 1.964):
+            return 2
+        elif (1.964 < direction) and (direction <= 2.749):
+            return 3
+        elif (2.749 < direction) and (direction <= 3.535):
+            return 4
+        elif (3.535 < direction) and (direction <= 4.320):
+            return 5
+        elif (4.320 < direction) and (direction <= 5.105):
+            return 6
+        else:
+            return 7
 
     # Create a list of coordinate pairs for the skribbl api to draw
-    # 
-    def generateVertices(self):
+    def generateVerticies(self):
+        self.test = np.zeros(self.sobelz.shape)
         lst = []
         start = self.findStart()
         cfrom = start
         LENGTH = 4
-        MIN = 150
+        MIN = 136
+
+        x = 0
+        cfromPending = cfrom
         while True:
-            cto = self.checkMove(self.sobelz,self.sobel_angles[cfrom[0]][cfrom[1]]+np.pi/2,cfrom,LENGTH,MIN)
-            print((cfrom,cto))
-            time.sleep(1)
-            lst.append((cfrom,cto))
+            self.test[cfrom[0]][cfrom[1]] = 155
+            self.sobelz[cfrom[0]][cfrom[1]] = 0
+            cto = self.checkMove(cfrom,LENGTH,MIN)
+
+            print((cfrom,cto), x)
+            # time.sleep(1)
+            if cto == cfrom:
+                return lst 
+            if x == LENGTH:
+                lst.append((cfromPending,cto))
+                cfromPending = cto
+                x = 0
+
             cfrom = cto
-            if cto == start:
-                return lst
-    
+            x = x + 1
+       
+        # while True:
+        #     self.test[cfrom[0]][cfrom[1]] = 255
+        #     cto = self.checkMove(cfrom,LENGTH,MIN)
+        #     print((cfrom,cto))
+        #     # time.sleep(1)
+        #     lst.append((cfrom,cto))
+        #     cfrom = cto
+        #     if cto == start:
+        #         return lst  
+
+"""
 fmt=Formatter('resources/circle1.jpg')
 fmt.calcSobel()
-start = fmt.findStart()
+# start = fmt.findStart()
 # print(start)
-# fmt.imshow(fmt.sobelz)
-lst = fmt.generateVertices()
+# fmt.imshow(fmt.sobelx)
+# fmt.imshow(fmt.sobely)
+# fmt.imshow(fmt.sobelz, False)
+# fmt.imshow(fmt.sobel_angles)
+
+lst = fmt.generateVerticies()
+fmt.imshow(fmt.test)
+#fmt.imshow(fmt.sobel_angles)
 print(lst)
+
+            
+
+# fmt2=Formatter('resources/image.jpeg')
+# fmt2.calcSobel()
+# fmt2.imshow(fmt2.sobelz)
+# fmt2.imshow(fmt2.sobel_angles)
+# print(fmt2.im[39][312][:])
+# fmt2.imshow(fmt2.im)
 
 # phase_shift = np.ones(c.shape) * np.pi/2
 # print(phase_shift)
@@ -165,3 +236,4 @@ print(lst)
 cv.waitKey(0)
 cv.destroyAllWindows()
 
+"""
